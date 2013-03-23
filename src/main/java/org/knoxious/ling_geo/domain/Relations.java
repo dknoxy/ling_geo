@@ -2,6 +2,9 @@
 package org.knoxious.ling_geo.domain;
 
 
-public class Relations{
+import java.util.HashMap;
+
+public class Relations {
+
 
 }
