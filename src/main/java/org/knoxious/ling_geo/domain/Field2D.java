@@ -12,9 +12,15 @@ public class Field2D {
 
 	private HashMap<Point2D, Location2D> field;
 
+	public Field2D(int x, int y)
+	{
+		this( x*y );
+	}
+
+	// A default constructor for convenience
 	public Field2D()
 	{
-		field = new HashMap<Point2D, Location2D>();
+		this( 24 * 24 );
 	}
 
 	public Field2D(int capacity)

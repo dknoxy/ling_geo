@@ -1,0 +1,6 @@
+<lg gameName="Test Game">
+	<field2d x="24" y="24">
+		<location2d xml:space="default"  x="1" y="5" dark="true"/>
+		<location2d xml:space="default"  x="5" y="5" dark="false"/>
+	</field2d>
+</lg>
