@@ -35,6 +35,7 @@ public class BootstrapTest
 			 // Start up
 			 bstrap.start();
 		 } catch (Exception ex) {
+			 ex.printStackTrace();
 			 Assert.fail(ex.getMessage());
 		 }
 	 }

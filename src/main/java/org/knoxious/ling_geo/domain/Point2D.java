@@ -16,6 +16,38 @@ package org.knoxious.ling_geo.domain;
 			xy = new Tuple(x,y);
 		}
 		
+		// expects a string in the form of "x/y"
+		public Point2D ( String locstr ) 
+		{
+			// dig out x
+			//String foobar = locstr;
+			//System.out.println("FOOBAR = " + foobar);
+			String[] s = locstr.split("/");
+			//System.out.println("<ctor> Location: " + locstr );
+			// for ( String axis : s ) {
+			//	System.out.println( axis );
+			//}
+			//System.out.println( "Counting: " + s[0] );
+			//System.out.println( "Counting: " + s[1] );
+			int x;
+			int y;
+			try {
+				if (s[0] != null && s[1] != null) {
+					x = Integer.valueOf(s[0]).intValue();
+					y = Integer.valueOf(s[1]).intValue();
+					xy = new Tuple(x,y);
+				} else {
+					throw new IllegalArgumentException(
+					locstr + "can't be formatted to an integer"
+					);
+				}
+			} catch (NumberFormatException nfx) {
+				throw new IllegalArgumentException( 
+					"Can't understand locstr: " + locstr
+					);
+			}
+		}
+		
 		@Override
 		public boolean equals(Object p) {
 			if (p != null) {
@@ -42,10 +74,13 @@ package org.knoxious.ling_geo.domain;
 			return xy.toString();
 		}
 
+		public String toString() {
+			return getName();
+		}
+
 		public int hashCode()
 		{
-			int retval = xy.hashCode();
-			return retval;
+		   return xy.hashCode();
 		}
 
 		/**
@@ -59,6 +94,13 @@ package org.knoxious.ling_geo.domain;
 		{
 			Tuple t = xy.getDelta(p.getTuple());
 			return t;
+		}
+
+		// Expects a string in the form of "x/y"
+		public static Point2D newInstance(String locStr)
+			throws IllegalArgumentException
+	   {
+			return new Point2D(locStr);
 		}
 
 		public int compareTo(Object p) 

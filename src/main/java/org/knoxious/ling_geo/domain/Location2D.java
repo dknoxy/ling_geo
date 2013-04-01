@@ -1,6 +1,9 @@
 
 package org.knoxious.ling_geo.domain;
 
+import org.knoxious.ling_geo.agents.Agent;
+
+import java.util.Collection;
 import java.util.HashMap;
 
 public class Location2D 
@@ -12,11 +15,12 @@ public class Location2D
 	private double value = 0.0;
 	private Relations relations = null;
 	private HashMap<String, Object> properties = new HashMap<String, Object>();
+	private HashMap<String, Agent> occupantMap = new HashMap<String, Agent>();
 
 	public Location2D(int x, int y, boolean dark, double value) {
-
 		// TBD: this limits us to a 2D Field.
 		point = new Point2D(x,y);
+		System.out.println("<ctor> Location2D : "+  x + "/" + y + " Point= " + point);
 		this.dark = dark;
 		this.value = value;
 	}
@@ -91,27 +95,48 @@ public class Location2D
 		}
 	}
 
-	/**
-	 * Return true if @param location is reachable from this location
-	 * within @param degree depth.
-	 */
-	public boolean isReachable(Location2D location ) //, trajectories)
-	{
-		// FIX ME: isReachable needs definition
-		return false;
+	public void addOccupant(Agent agent) {
+		System.out.println("Assigning agent to " + point.toString());
+		agent.setLocationAsString(point.toString());
+		occupantMap.put(agent.getName(), agent);
 	}
 
+	public Agent getOccupant(String agentName) {
+		return occupantMap.get(agentName);
+	}
+
+	public Agent removeOccupant(String agentName) {
+		return occupantMap.remove(agentName);
+	}
+
+	public Collection<Agent> getOccupants() {
+		return occupantMap.values();
+	}
+
+	/**
+	 * returns a shallow copy of the occupant map
+	 */
+	public HashMap<String, Agent> getOccupantMap()
+	{
+		return (HashMap<String, Agent>)occupantMap.clone();
+	}
 
 	/**
 	 * Defers to Point2D 
 	 */
-	public int compareTo(Object l) {
-		return point.compareTo(l);
+	public int compareTo(Object l) 
+		throws ClassCastException 
+	{
+		if ( l instanceof Location2D ) {
+			Location2D l2d = (Location2D)l;
+			return point.compareTo(l2d.getPoint());
+		} else if ( l instanceof Point2D ) {
+			return point.compareTo(l);
+		} else {
+			throw new ClassCastException("Object is not a valid type.");
+		}
 	}	
 
-	/**
-	 * Identifies a single location in the Field
-	 */
 }
 
 

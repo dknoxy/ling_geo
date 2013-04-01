@@ -1,6 +1,7 @@
 
 package org.knoxious.ling_geo.bootstrap;
 
+import org.knoxious.ling_geo.agents.Agent;
 import org.knoxious.ling_geo.domain.Field2D;
 import org.knoxious.ling_geo.domain.Location2D;
 
@@ -9,6 +10,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.Enumeration;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.LogManager;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -24,7 +30,6 @@ import org.w3c.dom.NodeList;
 
 import org.xml.sax.SAXException;
 
-
 public class BootstrapParser {
 
 	private final String configFileName;
@@ -32,10 +37,14 @@ public class BootstrapParser {
 	private Document doc;
 	private Field2D field;
 	private String gameName;
+	private Logger log;
 
 	public BootstrapParser(final String configFileName) 
 		throws SAXException 
 	{
+		log = Logger.getLogger(this.getClass().getName());
+		log.setUseParentHandlers(false);
+		log.entering(this.getClass().getName(), "CTOR", configFileName );
 		try {
 			this.configFileName = configFileName;
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -50,45 +59,53 @@ public class BootstrapParser {
 		} catch (UnsupportedEncodingException uex) {
 			throw new SAXException( "Error: " + uex.getMessage(), uex);
 		}
+		log.exiting(this.getClass().getName(), "CTOR");
 	}
 
 	public Field2D parse() throws SAXException {
-
+		log.entering(this.getClass().getName(), "parse");
 		try {
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
-			 InputStream is = cl.getResourceAsStream(configFileName);
+			InputStream is = cl.getResourceAsStream(configFileName);
 			 if ( is == null ) {
 				throw new SAXException("Input resource can't be found: " 
 					+ configFileName);
 			 }
 			doc = builder.parse(is);
-			doc.normalize();
 			Element el = doc.getDocumentElement();
-			el.normalize();
-			System.out.println("DOC : "+  el.getLocalName());
+			if (log.isLoggable(Level.FINER)) {
+				log.finer("DOC : "+  el.getLocalName());
+			}
 			gameName = el.getAttribute("gameName");
-			System.out.println("Game Name : " + gameName);
+			log.info("Initializing " + gameName);
+			if (log.isLoggable(Level.FINER)) {
+				log.finer("=== SIBLING PARSE LOOP ===");
+			}
 			Node sibling = el;
 			while (sibling != null) {
-				System.out.println("=== PARSE LOOP ===");
 				if (sibling.getNodeType() == Node.ELEMENT_NODE) {
 				   sibling = visitNode(sibling);
 				} else {
 					sibling = sibling.getNextSibling();
 				}
 			}
-			System.out.println("=== END PARSE LOOP ===");
+			if (log.isLoggable(Level.FINER)) {
+				log.finer("=== END SIBLING PARSE LOOP ===");
+			}
 		} catch (IOException iox) {
-			throw new SAXException("IOException: " + iox.getMessage(), iox);
+			SAXException saxx = new SAXException("IOException: " + iox.getMessage(), iox);
+			log.throwing(BootstrapParser.class.getName(), "parse()",saxx);
+			throw saxx;
 		}
+		log.exiting(this.getClass().getName(), "parse");
 		return field;
 	}
 
 	private Node visitNode(Node node) {
 		String nName = node.getNodeName();
-		System.out.println(" ==== VISIT NODE ===");
-		System.out.println("Node name : "+ nName);
-		System.out.println("Node type :" + node.getNodeType());
+		log.entering(
+			this.getClass().getName(), "visitNode", node
+			);
 		switch( nName ) {
 			case "field2d" : 
 					processField(node);
@@ -98,45 +115,81 @@ public class BootstrapParser {
 					processLocation(node);
 					processChildren(node);
 					break;
+			case "agent2d" :
+				try {
+					processAgent(node);
+					processChildren(node);
+				} catch (IllegalArgumentException iax) {
+					log.info("Problem interpreting agent metadata: " +
+					iax.getMessage() + " on " + node.toString()
+						);
+				}
+				break;
 			default:
-				System.out.println("DEFAULT RULE " + node);
+				log.info("visitNode DEFAULT RULE applied" + node + 
+				" Continuing to visit next node");
 				processChildren(node);
 				break;
 		}
-		System.out.println(" ==== END VISIT NODE ===");
+		log.exiting(this.getClass().getName(), "visitNode", node);
 		return node.getNextSibling();
 	}
 
 	private void processChildren(Node node) {
 		try {
-		System.out.println("=== processChildren ==== " + node);
-		System.out.println("Child = " + node.getFirstChild());
-		Node current = node.getFirstChild();
-		while( current != null) {
-			if ( current.getNodeType() == Node.ELEMENT_NODE) {
-			  visitNode(current);
+			log.entering(this.getClass().getName(), 
+				"processChildren",
+				node
+				);
+			log.finer("Child = " + node.getFirstChild());
+			Node current = node.getFirstChild();
+			while( current != null) {
+				if ( current.getNodeType() == Node.ELEMENT_NODE) {
+				  visitNode(current);
+				}
+				current = current.getNextSibling();
 			}
-			current = current.getNextSibling();
-			//System.out.println(current);
-		}
-		System.out.println("=== End processChildren ====");
 		} catch  (Exception  ex) {
-			System.out.println(ex);
+			log.throwing(this.getClass().getName(), "processChildren", ex);
 			throw ex;
 		}
+		log.exiting(this.getClass().getName(), "processChildren", node);
 	}
 
-	private void processLocation(Node node) {
-		System.out.println("ProcessLocation");
+	private void processLocation(Node node) 
+		throws IllegalArgumentException 
+	{
+		log.entering(this.getClass().getName(), 
+			"processLocation",
+			node
+			);
 		NamedNodeMap nmap = node.getAttributes();
-		Node elx = nmap.getNamedItem("x");
-		Node ely = nmap.getNamedItem("y");
-		Node elDark = nmap.getNamedItem("dark");
-		int x = Integer.valueOf(elx.getNodeValue()).intValue();
-		int y = Integer.valueOf(ely.getNodeValue()).intValue();
-		boolean dark = Boolean.getBoolean(elDark.getNodeValue());
-		Location2D location = new Location2D(x,y,dark);
-		field.addLocation(location);
+		Node attrx = nmap.getNamedItem("x");
+		Node attry = nmap.getNamedItem("y");
+		Node attrDark = nmap.getNamedItem("dark");
+		Node attrWeight = nmap.getNamedItem("weight");
+		try {
+			int x = Integer.valueOf(attrx.getNodeValue()).intValue();
+			int y = Integer.valueOf(attry.getNodeValue()).intValue();
+			boolean dark = Boolean.getBoolean(attrDark.getNodeValue());
+			double weight = 0.0;
+			if (attrWeight != null ) {
+				weight= Double.valueOf(attrWeight.getNodeValue());
+			}
+			Location2D location = new Location2D(x, y, dark, weight);
+			field.addLocation(location);
+		} catch (NumberFormatException nfx) {
+			IllegalArgumentException iax = new IllegalArgumentException(
+				"Can't understand coordinates: " + attrx + "/" + attry
+				 );
+			log.throwing(this.getClass().getName(), 
+				"processLocation",
+				iax
+				);
+			throw iax;
+		}
+		log.exiting(this.getClass().getName(), "processLocation", node);
+
 	}
 
 	private void processField(Node node)
@@ -145,15 +198,33 @@ public class BootstrapParser {
 		// TBD: Making some assumptions at this early point in time
 		// incoming location2d node
 		// TBD: making some assumptions at this early point
-		System.out.println("ProcessField");
+		log.entering(this.getClass().getName(), "processField", node);
 		NamedNodeMap nmap = node.getAttributes();
-		Node attrx = nmap.getNamedItem("x");
-		Node attry = nmap.getNamedItem("y");
-		int x = Integer.valueOf(attrx.getNodeValue()).intValue();
-		int y = Integer.valueOf(attry.getNodeValue()).intValue();
-		field = new Field2D( x*y );
+		try {
+			Node attrx = nmap.getNamedItem("x");
+			Node attry = nmap.getNamedItem("y");
+			int x = Integer.valueOf(attrx.getNodeValue()).intValue();
+			int y = Integer.valueOf(attry.getNodeValue()).intValue();
+			field = new Field2D( x*y );
+		} catch (NumberFormatException nfx) {
+			IllegalArgumentException iax = new IllegalArgumentException(
+				"Can't understand Field dimensions: " + nfx.getMessage()
+				);
+			log.throwing(this.getClass().getName(), "processField", iax);
+			throw iax;
+		}
+		log.exiting(this.getClass().getName(), "processField", node);
 	}
 
-
-
+	private void processAgent(Node node)
+	{
+		log.entering(this.getClass().getName(), "processAgent", node);
+		NamedNodeMap nmap = node.getAttributes();
+		String attrName = nmap.getNamedItem("name").getNodeValue();
+		String attrLocation2d = nmap.getNamedItem("location2d").getNodeValue();
+		String attrType = nmap.getNamedItem("type").getNodeValue();
+		Agent agent = Agent.newInstance(attrName, attrLocation2d, attrType);
+		field.addAgent(agent);
+		log.exiting(this.getClass().getName(), "processAgent", node);
+	}
 };
