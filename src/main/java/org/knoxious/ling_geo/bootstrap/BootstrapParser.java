@@ -11,10 +11,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
-import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.LogManager;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,7 +40,6 @@ public class BootstrapParser {
 		throws SAXException 
 	{
 		log = Logger.getLogger(this.getClass().getName());
-		log.setUseParentHandlers(false);
 		log.entering(this.getClass().getName(), "CTOR", configFileName );
 		try {
 			this.configFileName = configFileName;
@@ -73,14 +69,10 @@ public class BootstrapParser {
 			 }
 			doc = builder.parse(is);
 			Element el = doc.getDocumentElement();
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("DOC : "+  el.getLocalName());
-			}
+			log.finer("DOC : "+  el.getLocalName());
 			gameName = el.getAttribute("gameName");
 			log.info("Initializing " + gameName);
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("=== SIBLING PARSE LOOP ===");
-			}
+			log.finer("=== SIBLING PARSE LOOP ===");
 			Node sibling = el;
 			while (sibling != null) {
 				if (sibling.getNodeType() == Node.ELEMENT_NODE) {
@@ -89,9 +81,7 @@ public class BootstrapParser {
 					sibling = sibling.getNextSibling();
 				}
 			}
-			if (log.isLoggable(Level.FINER)) {
-				log.finer("=== END SIBLING PARSE LOOP ===");
-			}
+			log.finer("=== END SIBLING PARSE LOOP ===");
 		} catch (IOException iox) {
 			SAXException saxx = new SAXException("IOException: " + iox.getMessage(), iox);
 			log.throwing(BootstrapParser.class.getName(), "parse()",saxx);
@@ -106,36 +96,32 @@ public class BootstrapParser {
 		log.entering(
 			this.getClass().getName(), "visitNode", node
 			);
-		switch( nName ) {
-			case "field2d" : 
-					processField(node);
-					processChildren(node);
-					break;
-			case "location2d" :
-					processLocation(node);
-					processChildren(node);
-					break;
-			case "agent2d" :
-				try {
-					processAgent(node);
-					processChildren(node);
-				} catch (IllegalArgumentException iax) {
-					log.info("Problem interpreting agent metadata: " +
-					iax.getMessage() + " on " + node.toString()
-						);
-				}
-				break;
-			default:
-				log.info("visitNode DEFAULT RULE applied" + node + 
-				" Continuing to visit next node");
+		if ("field2d".equals(nName)) {
+			processField(node);
+			processChildren(node);
+      } else if ("location2d".equals(nName)) {
+			processLocation(node);
+			processChildren(node);
+		} else if ("agent2d".equals(nName)) {
+			try {
+				processAgent(node);
 				processChildren(node);
-				break;
+			} catch (IllegalArgumentException iax) {
+				log.info("Problem interpreting agent metadata: " +
+				iax.getMessage() + " on " + node.toString()
+					);
+			}
+		} else {
+			log.info("visitNode DEFAULT RULE applied" + node + 
+			" Continuing to visit next node");
+			processChildren(node);
 		}
 		log.exiting(this.getClass().getName(), "visitNode", node);
 		return node.getNextSibling();
 	}
 
-	private void processChildren(Node node) {
+	private void processChildren(Node node) 
+	{
 		try {
 			log.entering(this.getClass().getName(), 
 				"processChildren",
@@ -150,8 +136,9 @@ public class BootstrapParser {
 				current = current.getNextSibling();
 			}
 		} catch  (Exception  ex) {
-			log.throwing(this.getClass().getName(), "processChildren", ex);
-			throw ex;
+			log.severe(this.getClass().getName() + " processChildren: " + 
+				ex.getMessage()
+				);
 		}
 		log.exiting(this.getClass().getName(), "processChildren", node);
 	}
