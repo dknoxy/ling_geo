@@ -1,18 +1,36 @@
-<lg gameName="Test Game">
-	<field2d x="24" y="24">
-		<location2d x="1" y="5" dark="true" weight="1.0"/>
-		<location2d x="5" y="5" dark="false"/>
-	</field2d>
-	<agents2d>
-		<agent2d
-			name="agent1" 
-			location2d="1/5" 
-			type="org.knoxious.ling_geo.agents.DefaultAgent"
-			/>
-		<agent2d
-			name="agent2"
-			location2d="5/5"
-			type="org.knoxious.ling_geo.agents.DefaultAgent"
-			/>
-	</agents2d>
+<lg>
+    <gamename>Test Game</gamename>
+    <field 
+        class="org.knoxious.ling_geo.domain.Field2D"
+	defaultPointClass="org.knoxious.ling_geo.domain.Point2D"
+        xdim="24" 
+	ydim="24"
+	defaultLocationClass = "org.knoxious.ling_geo.domain.Location2D"
+	>
+        <location 
+	    class="org.knoxious.ling_geo.domain.Location2D"
+	    xpos="1" ypos="5" name="Dark Location"
+	    >
+            <dark>true</dark>
+            <weight>1.0</weight>
+            <property name="Foo" value="Bar"/>
+            <property name="Bar" value="Foo"/>
+        </location>
+        <location xpos="5" ypos="5" name="Visible Location">
+            <dark>false</dark>
+        </location>
+	<location xpos="5" ypos="6" name="Default Location">
+	    <weight>1.0</weight>
+	</location>
+    </field>
+    <agent
+        name="agent1" 
+        location="Visible Location" 
+        class="org.knoxious.ling_geo.agents.DefaultAgent"
+    />
+    <agent
+        name="agent2"
+        location="5/5"
+        class="org.knoxious.ling_geo.agents.DefaultAgent"
+    />
 </lg>

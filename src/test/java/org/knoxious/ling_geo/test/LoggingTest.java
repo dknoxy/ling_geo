@@ -3,9 +3,7 @@ package org.knoxious.ling_geo.test;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
-
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.Logger;
+import java.util.logging.Logger;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -33,7 +31,7 @@ public class LoggingTest
 		 System.out.println("Test Logging");
 		 Logger log = Logger.getLogger(this.getClass().getName());
 		 log.info("Log1 test");
-		 log.debug("Log2 test");
+		 log.severe("Log severe");
 		 System.out.println("Level: " + log.getLevel());
 	 }
 

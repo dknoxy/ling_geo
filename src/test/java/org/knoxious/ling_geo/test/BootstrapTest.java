@@ -1,6 +1,8 @@
 package org.knoxious.ling_geo.test;
 
 import org.knoxious.ling_geo.bootstrap.Bootstrap;
+import org.knoxious.ling_geo.bootstrap.LG;
+import org.knoxious.ling_geo.config.LGConfig;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -34,6 +36,11 @@ public class BootstrapTest
 			 Bootstrap bstrap = new Bootstrap(args);
 			 // Start up
 			 bstrap.start();
+			 LG lg = LGConfig.getGame();
+			 System.out.println(lg.getGamename());
+			 System.out.println(lg.getGameDomainSize());
+			 //System.out.println(lg.getGameXDimension());
+			 //System.out.println(lg.getGameYDimension());
 		 } catch (Exception ex) {
 			 ex.printStackTrace();
 			 Assert.fail(ex.getMessage());
